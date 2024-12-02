@@ -75,8 +75,6 @@ jobs:
       run: |
         sudo apt-get install -y zip
         cd ./test-automation
-        zip -r ./JmeterDevlReport.zip ./JmeterDevlReport/
-        zip -r ./JmeterStageReport.zip ./JmeterStageReport/
         zip -r ./JmeterPHIQAReport.zip ./JmeterPHIQAReport/
 
     - name: Send email with JMeter reports
@@ -106,6 +104,4 @@ jobs:
         from: "Tech by Design FHIR SmokeTest Result <no-reply@tx.techbd.org>"
         to: nidhin-unni@netspective.in, rinshad-asharaf@netspective.in
         attachments: |
-          ./test-automation/JmeterDevlReport.zip        
-          ./test-automation/JmeterStageReport.zip
           ./test-automation/JmeterPHIQAReport.zip
