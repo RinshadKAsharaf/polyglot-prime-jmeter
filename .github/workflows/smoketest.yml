@@ -55,14 +55,15 @@ jobs:
     - name: Verify updates
       run: |
           CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
+          
           echo "Verifying jmeter.properties:"
-          cat $CONFIG_DIR/jmeter.properties
+          grep ssl $CONFIG_DIR/jmeter.properties
           
           echo "Verifying system.properties:"
-          cat $CONFIG_DIR/system.properties
+          grep ssl $CONFIG_DIR/system.properties
           
           echo "Verifying user.properties:"
-          cat $CONFIG_DIR/user.properties
+          grep ssl $CONFIG_DIR/user.properties
         
     - name: Run FHIR Bundle SmokeTest - Devl
       run: |
