@@ -34,7 +34,7 @@ jobs:
     - name: Run FHIR Bundle SmokeTest - Devl
       run: |
        mkdir -p ./test-automation/JmeterDevlReport/bundletest
-       ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/apache-jmeter-5.6.3/FHIR-Bundle-SmokeTest-Devl/Bundle.jmx" -l "./test-automation/JmeterDevlResult/bundletest2.jtl"
+       ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Devl/Bundle.jmx" -l "./test-automation/JmeterDevlResult/bundletest2.jtl"
        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterDevlResult/bundletest2.jtl" -o "./test-automation/JmeterDevlReport/bundletest2"
 
    # - name: Run FHIR Bundle SmokeTest - QA
