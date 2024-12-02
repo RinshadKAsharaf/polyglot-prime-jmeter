@@ -66,18 +66,19 @@ jobs:
         
     - name: Run FHIR Bundle SmokeTest - Devl
       run: |
-       mkdir -p ./test-automation/JmeterDevlReport/bundletest
+       mkdir -p ./test-automation/JmeterDevlReport/
        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Devl/Bundle.jmx" -l "./test-automation/JmeterDevlResult/bundletest2.jtl"
        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterDevlResult/bundletest2.jtl" -o "./test-automation/JmeterDevlReport/"
 
     - name: Run FHIR Bundle SmokeTest - Stage
       run: |
-        mkdir -p ./test-automation/JmeterStageReport/bundletest
+        mkdir -p ./test-automation/JmeterStageReport/
         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx" -l "./test-automation/JmeterStageResult/bundletest.jtl"
         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterStageResult/bundletest.jtl" -o "./test-automation/JmeterStageReport/"
 
     - name: Run FHIR Bundle SmokeTest - QA
       run: |
+        mkdir -p ./test-automation/JmeterPHIQAReport/
         /home/ubuntu/apache-jmeter-5.6.3/bin/jmeter -n -t "/home/ubuntu/apache-jmeter-5.6.3/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx" -l "/home/ubuntu/JmeterPHIQAResult/bundletest.jtl"
         /home/ubuntu/apache-jmeter-5.6.3/bin/jmeter -g "/home/ubuntu/JmeterPHIQAResult/bundletest.jtl" -o "/home/ubuntu/JmeterPHIQAReport/"
 
