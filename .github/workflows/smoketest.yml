@@ -31,12 +31,12 @@ jobs:
       run: |
           CERT_DIR="./test-automation/Certificates"
           mkdir -p $CERT_DIR
-          echo "$P12_FILE_BASE64" | base64 -d > "$CERT_DIR/techbd-temp-HUB-key.p12"
+          echo "$P12_FILE_BASE64" | base64 -d > "$CERT_DIR/techbd-phi-QA-key.p12"
           
     - name: Update SSL paths in JMeter configuration files
       run: |
           CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
-          CERT_PATH="../../test-automation/Certificates/techbd-temp-HUB-key.p12"
+          CERT_PATH="./test-automation/Certificates/techbd-phi-QA-key.p12"
 
           echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
           echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
@@ -65,18 +65,6 @@ jobs:
           echo "Verifying user.properties:"
           grep ssl $CONFIG_DIR/user.properties
         
-    - name: Run FHIR Bundle SmokeTest - Devl
-      run: |
-       mkdir -p ./test-automation/JmeterDevlReport/
-       ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Devl/Bundle.jmx" -l "./test-automation/JmeterDevlResult/bundletest2.jtl"
-       ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterDevlResult/bundletest2.jtl" -o "./test-automation/JmeterDevlReport/"
-
-    - name: Run FHIR Bundle SmokeTest - Stage
-      run: |
-        mkdir -p ./test-automation/JmeterStageReport/
-        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx" -l "./test-automation/JmeterStageResult/bundletest.jtl"
-        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterStageResult/bundletest.jtl" -o "./test-automation/JmeterStageReport/"
-
     - name: Run FHIR Bundle SmokeTest - QA
       run: |
         mkdir -p ./test-automation/JmeterPHIQAReport/
