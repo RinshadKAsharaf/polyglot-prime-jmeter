@@ -89,7 +89,7 @@ jobs:
         cd ./test-automation
         zip -r ./JmeterDevlReport.zip ./JmeterDevlReport/
         zip -r ./JmeterStageReport.zip ./JmeterStageReport/
-        zip -r ./JmeterPHIQAReport.zip /home/ubuntu/JmeterPHIQAReport/bundletest
+        zip -r ./JmeterPHIQAReport.zip ./JmeterPHIQAReport/
 
     - name: Send email with JMeter reports
       uses: dawidd6/action-send-mail@v3
