@@ -58,12 +58,20 @@ jobs:
         password: ${{ secrets.SES_SMTP_PASSWORD }}
         subject: "TechBD FHIR Bundle SmokeTest"
         body: |
-            The following are the FHIR Bundle SmokeTest Result:
+            Hello Team,
             
-            Development Report: Attached
-            Stage Report: Attached
-            QA Report: Attached
-   
+            This is an automated notification for the FHIR Bundle SmokeTest results generated every hour.  
+
+            **Test Summary (Hourly Run):**
+            - **Development Report**: Attached
+            - **Stage Report**: Attached
+            - **QA Report**: Attached
+
+            Please find the attached reports for detailed results of the tests executed during the last hour.
+
+            Regards,  
+            Tech by Design Automation Team  
+
         content_type: "text/plain"
         from: "Tech by Design FHIR SmokeTest Result <no-reply@tx.techbd.org>"
         to: nidhin-unni@netspective.in, rinshad-asharaf@netspective.in
