@@ -33,39 +33,42 @@ jobs:
           mkdir -p $CERT_DIR
           echo "$P12_FILE_BASE64" | base64 -d > "$CERT_DIR/techbd-temp-HUB-key.p12"
 
-    - name: Update SSL paths in JMeter configuration files
+    - name: Set variables
       run: |
-          CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
-          CERT_PATH="./test-automation/Certificates/techbd-temp-HUB-key.p12"
-
-          # Update .properties
+        CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
+        CERT_PATH="./test-automation/Certificates/techbd-temp-HUB-key.p12"
+        
+    - name: Update jmeter.properties
+      run: |
+          # Update keystore and other ssl properties in jmeter.properties
           sed -i "s|^javax.net.ssl.keyStore=.*|javax.net.ssl.keyStore=$CERT_PATH|" $CONFIG_DIR/jmeter.properties
           sed -i "s|^javax.net.ssl.keyStorePassword=.*|javax.net.ssl.keyStorePassword=|" $CONFIG_DIR/jmeter.properties
           sed -i "s|^javax.net.ssl.keyStoreType=.*|javax.net.ssl.keyStoreType=pkcs12|" $CONFIG_DIR/jmeter.properties
 
-          # Update system.properties
+    - name: Update system.properties
+      run: |
+          # Update keystore and other ssl properties in system.properties
           sed -i "s|^javax.net.ssl.keyStore=.*|javax.net.ssl.keyStore=$CERT_PATH|" $CONFIG_DIR/system.properties
           sed -i "s|^javax.net.ssl.keyStorePassword=.*|javax.net.ssl.keyStorePassword=|" $CONFIG_DIR/system.properties
           sed -i "s|^javax.net.ssl.keyStoreType=.*|javax.net.ssl.keyStoreType=pkcs12|" $CONFIG_DIR/system.properties
 
-          # Update user.properties
+    - name: Update user.properties
+      run: |
+          # Update keystore and other ssl properties in user.properties
           sed -i "s|^javax.net.ssl.keyStore=.*|javax.net.ssl.keyStore=$CERT_PATH|" $CONFIG_DIR/user.properties
           sed -i "s|^javax.net.ssl.keyStorePassword=.*|javax.net.ssl.keyStorePassword=|" $CONFIG_DIR/user.properties
           sed -i "s|^javax.net.ssl.keyStoreType=.*|javax.net.ssl.keyStoreType=pkcs12|" $CONFIG_DIR/user.properties
 
-  
-    - name: Verify SSL paths in configuration files
+    - name: Verify updates
       run: |
-        CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
-          
           echo "Verifying jmeter.properties:"
-          grep ssl $CONFIG_DIR/jmeter.properties
+          cat $CONFIG_DIR/jmeter.properties
           
           echo "Verifying system.properties:"
-          grep ssl $CONFIG_DIR/system.properties
+          cat $CONFIG_DIR/system.properties
           
           echo "Verifying user.properties:"
-          grep ssl $CONFIG_DIR/user.properties
+          cat $CONFIG_DIR/user.properties
         
     - name: Run FHIR Bundle SmokeTest - Devl
       run: |
