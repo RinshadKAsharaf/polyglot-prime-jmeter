@@ -36,22 +36,21 @@ jobs:
     - name: Update SSL paths in JMeter configuration files
       run: |
           CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
-          CERT_PATH="./test-automation/Certificates/techbd-temp-HUB-key.p12"
+          CERT_PATH="../../test-automation/Certificates/techbd-temp-HUB-key.p12"
 
-          # Update jmeter.properties
-          sed -i "s|^javax.net.ssl.keyStore=.*|javax.net.ssl.keyStore=$CERT_PATH|" $CONFIG_DIR/jmeter.properties
-          sed -i "s|^javax.net.ssl.keyStorePassword=.*|javax.net.ssl.keyStorePassword=|" $CONFIG_DIR/jmeter.properties
-          sed -i "s|^javax.net.ssl.keyStoreType=.*|javax.net.ssl.keyStoreType=pkcs12|" $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
 
           # Update system.properties
-          sed -i "s|^javax.net.ssl.keyStore=.*|javax.net.ssl.keyStore=$CERT_PATH|" $CONFIG_DIR/system.properties
-          sed -i "s|^javax.net.ssl.keyStorePassword=.*|javax.net.ssl.keyStorePassword=|" $CONFIG_DIR/system.properties
-          sed -i "s|^javax.net.ssl.keyStoreType=.*|javax.net.ssl.keyStoreType=pkcs12|" $CONFIG_DIR/system.properties
+          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/system.properties
+          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/system.properties
+          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/system.properties
 
           # Update user.properties
-          sed -i "s|^javax.net.ssl.keyStore=.*|javax.net.ssl.keyStore=$CERT_PATH|" $CONFIG_DIR/user.properties
-          sed -i "s|^javax.net.ssl.keyStorePassword=.*|javax.net.ssl.keyStorePassword=|" $CONFIG_DIR/user.properties
-          sed -i "s|^javax.net.ssl.keyStoreType=.*|javax.net.ssl.keyStoreType=pkcs12|" $CONFIG_DIR/user.properties
+          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/user.properties
+          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
+          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
 
     - name: Verify updates
       run: |
