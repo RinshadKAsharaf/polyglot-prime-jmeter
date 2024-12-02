@@ -1,6 +1,5 @@
 name: FHIR Server Test & Site
 on:
-  push:
   pull_request:
     branches: [ "main" ]
     
