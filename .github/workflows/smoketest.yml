@@ -80,7 +80,7 @@ jobs:
     - name: Run FHIR Bundle SmokeTest - QA
       run: |
         mkdir -p ./test-automation/JmeterPHIQAReport/
-         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/apache-jmeter-5.6.3/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx" -l "./test-automation/JmeterPHIQAResult/bundletest.jtl"
+         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx" -l "./test-automation/JmeterPHIQAResult/bundletest.jtl"
          ./test-automation//apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterPHIQAResult/bundletest.jtl" -o "./test-automation/JmeterPHIQAReport/"
 
     - name: Archive JMeter Reports into ZIP files
