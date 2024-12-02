@@ -118,6 +118,6 @@ jobs:
         from: "Tech by Design FHIR SmokeTest Result <no-reply@tx.techbd.org>"
         to: nidhin-unni@netspective.in, rinshad-asharaf@netspective.in
         attachments: |
-          ./JmeterDevlReport.zip        
-          ./JmeterStageReport.zip
-          ./JmeterPHIQAReport.zip
+          ./test-automation/JmeterDevlReport.zip        
+          ./test-automation/JmeterStageReport.zip
+          ./test-automation/JmeterPHIQAReport.zip
