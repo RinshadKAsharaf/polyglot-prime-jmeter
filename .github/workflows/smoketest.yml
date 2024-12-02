@@ -1,4 +1,4 @@
-name: FHIR Jmeter Test
+name: FHIR Bundle SmokeTest
 on:
   schedule:
     - cron: '0 * * * *'
@@ -25,17 +25,17 @@ jobs:
         tar -xzf apache-jmeter-5.6.3.tgz
         sudo mv apache-jmeter-5.6.3 ./test-automation/
 
-    - name: Run FHIR Bundle SmokeTest - Stage
-      run: |
-        mkdir -p ./test-automation/JmeterStageReport/bundletest
-        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx" -l "./test-automation/JmeterStageResult/bundletest.jtl"
-        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterStageResult/bundletest.jtl" -o "./test-automation/JmeterStageReport/bundletest"
-
     - name: Run FHIR Bundle SmokeTest - Devl
       run: |
        mkdir -p ./test-automation/JmeterDevlReport/bundletest
        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Devl/Bundle.jmx" -l "./test-automation/JmeterDevlResult/bundletest2.jtl"
        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterDevlResult/bundletest2.jtl" -o "./test-automation/JmeterDevlReport/bundletest2"
+
+    - name: Run FHIR Bundle SmokeTest - Stage
+      run: |
+        mkdir -p ./test-automation/JmeterStageReport/bundletest
+        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx" -l "./test-automation/JmeterStageResult/bundletest.jtl"
+        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterStageResult/bundletest.jtl" -o "./test-automation/JmeterStageReport/bundletest"
 
    # - name: Run FHIR Bundle SmokeTest - QA
    #   run: |
@@ -45,8 +45,8 @@ jobs:
     - name: Archive JMeter Reports into ZIP files
       run: |
         sudo apt-get install -y zip
-        zip -r ./JmeterStageReport.zip ./test-automation/JmeterStageReport/bundletest
         zip -r ./JmeterDevlReport.zip ./test-automation/JmeterDevlReport/bundletest2
+        zip -r ./JmeterStageReport.zip ./test-automation/JmeterStageReport/bundletest
     #    zip -r ./JmeterPHIQAReport.zip /home/ubuntu/JmeterPHIQAReport/bundletest
 
     - name: Send email with JMeter reports
@@ -56,18 +56,18 @@ jobs:
         server_port: 587
         username: ${{ secrets.SES_SMTP_USERNAME }}
         password: ${{ secrets.SES_SMTP_PASSWORD }}
-        subject: "TechBD FHIR SmokeTest Result"
+        subject: "TechBD FHIR Bundle SmokeTest"
         body: |
-            The following are the FHIR SmokeTest Result:
-
-            Stage Report: Attached
+            The following are the FHIR Bundle SmokeTest Result:
+            
             Development Report: Attached
+            Stage Report: Attached
             QA Report: Attached
    
         content_type: "text/plain"
         from: "Tech by Design FHIR SmokeTest Result <no-reply@tx.techbd.org>"
         to: nidhin-unni@netspective.in, rinshad-asharaf@netspective.in
         attachments: |
+          ./JmeterDevlReport.zip        
           ./JmeterStageReport.zip
-          ./JmeterDevlReport.zip
     #      ./JmeterPHIQAReport.zip
