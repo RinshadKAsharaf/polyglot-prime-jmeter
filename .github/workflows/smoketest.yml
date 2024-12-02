@@ -28,7 +28,7 @@ jobs:
     - name: Run FHIR Bundle SmokeTest - Stage
       run: |
         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx" -l "./test-automation/JmeterStageResult/bundletest.jtl"
-        ./test-automation/bin/jmeter -g "./test-automation/JmeterStageResult/bundletest.jtl" -o "./test-automation/JmeterStageReport/bundletest"
+        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterStageResult/bundletest.jtl" -o "./test-automation/JmeterStageReport/bundletest"
 
     - name: Run FHIR Bundle SmokeTest - Devl
       run: |
