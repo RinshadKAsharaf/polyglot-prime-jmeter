@@ -50,50 +50,46 @@ jobs:
           echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
           echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
 
+
     - name: Run FHIR Bundle SmokeTest - Staging
+      id: run-staging
       run: |
         mkdir -p ./test-automation/JmeterStageResult/
-        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx" -l "./test-automation/JmeterStageResult/bundletest.jtl" > stage_summary.txt
-      continue-on-error: true
-
-    - name: Parse Staging Test Result
-      id: staging_result
-      run: |
-        ERRORS=$(grep "summary =" stage_summary.txt | grep -o "Err: [0-9]*" | awk '{print $2}')
-        echo "errors=$ERRORS" >> $GITHUB_ENV
+        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx" -l "./test-automation/JmeterStageResult/bundletest.jtl"
+        summary=$(grep "summary =" ./test-automation/JmeterStageResult/bundletest.jtl)
+        errors=$(echo "$summary" | grep -oP "Err:\s+\K\d+")
+        echo "staging_errors=$errors" >> $GITHUB_ENV
 
     - name: Run FHIR Bundle SmokeTest - PHI-QA
+      id: run-phiqa
       run: |
         mkdir -p ./test-automation/JmeterPHIQAResult/
-        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx" -l "./test-automation/JmeterPHIQAResult/bundletest.jtl" > phiqa_summary.txt
-        cat ./phiqa_summary.txt
-      continue-on-error: true
+        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx" -l "./test-automation/JmeterPHIQAResult/bundletest.jtl"
+        summary=$(grep "summary =" ./test-automation/JmeterPHIQAResult/bundletest.jtl)
+        errors=$(echo "$summary" | grep -oP "Err:\s+\K\d+")
+        echo "phiqa_errors=$errors" >> $GITHUB_ENV
 
-    - name: Parse PHI-QA Test Result
-      id: phiqa_result
+    - name: Determine Failure
+      id: determine-failure
       run: |
-        ERRORS=$(grep "summary =" phiqa_summary.txt | grep -o "Err: [0-9]*" | awk '{print $2}')
-        echo "errors=$ERRORS" >> $GITHUB_ENV
-
-    - name: Determine Failures
-      id: determine_failures
-      run: |
-        if [[ "$staging_result_errors" -gt 0 ]]; then
+        if [[ "$staging_errors" -gt 0 ]]; then
           echo "failure_env=Staging" >> $GITHUB_ENV
           echo "failure_report=./test-automation/JmeterStageResult" >> $GITHUB_ENV
-        elif [[ "$phiqa_result_errors" -gt 0 ]]; then
+        elif [[ "$phiqa_errors" -gt 0 ]]; then
           echo "failure_env=PHI-QA" >> $GITHUB_ENV
           echo "failure_report=./test-automation/JmeterPHIQAResult" >> $GITHUB_ENV
         else
           echo "failure_env=None" >> $GITHUB_ENV
         fi
-    - name: Zip Failed Report
+
+    - name: Archive Failure Report (Conditional)
       if: env.failure_env != 'None'
       run: |
         sudo apt-get install -y zip
-        zip -r ./failed_report.zip ${{ env.failure_report }}
+        cd ./test-automation
+        zip -r ./FailureReport.zip ${{ env.failure_report }}
 
-    - name: Send Email Notification
+    - name: Send Email Notification (Conditional)
       if: env.failure_env != 'None'
       uses: dawidd6/action-send-mail@v3
       with:
