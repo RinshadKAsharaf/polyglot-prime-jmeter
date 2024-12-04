@@ -85,7 +85,7 @@ jobs:
           echo "failure_report=./test-automation/JmeterPHIQAResult" >> $GITHUB_ENV
         else
           echo "failure_env=None" >> $GITHUB_ENV
-
+        fi
     - name: Zip Failed Report
       if: env.failure_env != 'None'
       run: |
