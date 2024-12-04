@@ -1,11 +1,11 @@
 name: FHIR Bundle SmokeTest
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 */1 * * *'
   workflow_dispatch:  
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +27,7 @@ jobs:
 
     - name: Decode the .p12 file
       env:
-        P12_FILE_BASE64: ${{ secrets.TECHBD_TEMP_HUB_KEY_BASE64 }}
+        P12_FILE_BASE64: ${{ secrets.TECHBD_PHI_QA_KEY_BASE64 }}
       run: |
           CERT_DIR="./test-automation/Certificates"
           mkdir -p $CERT_DIR
@@ -42,66 +42,75 @@ jobs:
           echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
           echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
 
-          # Update system.properties
           echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/system.properties
           echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/system.properties
           echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/system.properties
 
-          # Update user.properties
           echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/user.properties
           echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
           echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
 
-    - name: Verify updates
+    - name: Run FHIR Bundle SmokeTest - Staging
       run: |
-          CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
-          
-          echo "Verifying jmeter.properties:"
-          grep ssl $CONFIG_DIR/jmeter.properties
-          
-          echo "Verifying system.properties:"
-          grep ssl $CONFIG_DIR/system.properties
-          
-          echo "Verifying user.properties:"
-          grep ssl $CONFIG_DIR/user.properties
-        
-    - name: Run FHIR Bundle SmokeTest - QA
-      run: |
-        mkdir -p ./test-automation/JmeterPHIQAReport/
-         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx" -l "./test-automation/JmeterPHIQAResult/bundletest.jtl"
-         ./test-automation//apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterPHIQAResult/bundletest.jtl" -o "./test-automation/JmeterPHIQAReport/"
+        mkdir -p ./test-automation/JmeterStageResult/
+        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx" -l "./test-automation/JmeterStageResult/bundletest.jtl" > stage_summary.txt
+      continue-on-error: true
 
-    - name: Archive JMeter Reports into ZIP files
+    - name: Parse Staging Test Result
+      id: staging_result
+      run: |
+        ERRORS=$(grep "summary =" stage_summary.txt | grep -o "Err: [0-9]*" | awk '{print $2}')
+        echo "errors=$ERRORS" >> $GITHUB_ENV
+
+    - name: Run FHIR Bundle SmokeTest - PHI-QA
+      run: |
+        mkdir -p ./test-automation/JmeterPHIQAResult/
+        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx" -l "./test-automation/JmeterPHIQAResult/bundletest.jtl" > phiqa_summary.txt
+      continue-on-error: true
+
+    - name: Parse PHI-QA Test Result
+      id: phiqa_result
+      run: |
+        ERRORS=$(grep "summary =" phiqa_summary.txt | grep -o "Err: [0-9]*" | awk '{print $2}')
+        echo "errors=$ERRORS" >> $GITHUB_ENV
+
+    - name: Determine Failures
+      id: determine_failures
+      run: |
+        if [[ "$staging_result_errors" -gt 0 ]]; then
+          echo "failure_env=Staging" >> $GITHUB_ENV
+          echo "failure_report=./test-automation/JmeterStageResult" >> $GITHUB_ENV
+        elif [[ "$phiqa_result_errors" -gt 0 ]]; then
+          echo "failure_env=PHI-QA" >> $GITHUB_ENV
+          echo "failure_report=./test-automation/JmeterPHIQAResult" >> $GITHUB_ENV
+        else
+          echo "failure_env=None" >> $GITHUB_ENV
+
+    - name: Zip Failed Report
+      if: env.failure_env != 'None'
       run: |
         sudo apt-get install -y zip
-        cd ./test-automation
-        zip -r ./JmeterPHIQAReport.zip ./JmeterPHIQAReport/
+        zip -r ./failed_report.zip ${{ env.failure_report }}
 
-    - name: Send email with JMeter reports
+    - name: Send Email Notification
+      if: env.failure_env != 'None'
       uses: dawidd6/action-send-mail@v3
       with:
         server_address: email-smtp.us-east-1.amazonaws.com
         server_port: 587
         username: ${{ secrets.SES_SMTP_USERNAME }}
         password: ${{ secrets.SES_SMTP_PASSWORD }}
-        subject: "TechBD FHIR Bundle SmokeTest"
+        subject: "FHIR Bundle SmokeTest Failed: ${{ env.failure_env }}"
         body: |
             Hello Team,
-            
-            This is an automated notification for the FHIR Bundle SmokeTest results generated every hour.  
 
-            Test Summary (Hourly Run):
-            - Development Report: Attached
-            - Stage Report: Attached
-            - QA Report: Attached
-
-            Please find the attached reports for detailed results of the tests executed during the last hour.
+            The FHIR Bundle SmokeTest for the ${{ env.failure_env }} environment has failed.  
+            Please find the attached report for more details.
 
             Regards,  
             Tech by Design Automation Team  
 
         content_type: "text/plain"
         from: "Tech by Design FHIR SmokeTest Result <no-reply@tx.techbd.org>"
-        to: nidhin-unni@netspective.in, rinshad-asharaf@netspective.in
-        attachments: |
-          ./test-automation/JmeterPHIQAReport.zip
+        to: nidhin-unni@netspective.in
+        attachments: ./failed_report.zip
