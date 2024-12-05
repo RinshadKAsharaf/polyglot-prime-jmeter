@@ -47,6 +47,7 @@ jobs:
       run: |
         mkdir -p ./test-automation/JmeterStageResult/
         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx" -l "./test-automation/JmeterStageResult/bundletest.jtl" > ./test-automation/JmeterStageResult/staging.log
+        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterStageResult/bundletest.jtl" -o "./test-automation/JmeterStageReport/"
         staging_errors=$(grep "summary =" ./test-automation/JmeterStageResult/staging.log | tail -1 | grep -oP "Err:\s+\K\d+")
         echo "staging_errors=$staging_errors" >> $GITHUB_ENV
 
@@ -55,8 +56,16 @@ jobs:
       run: |
         mkdir -p ./test-automation/JmeterPHIQAResult/
         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx" -l "./test-automation/JmeterPHIQAResult/bundletest.jtl" > ./test-automation/JmeterPHIQAResult/phiqa.log
+        ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterPHIQAResult/bundletest.jtl" -o "./test-automation/JmeterPHIQAReport/"        
         phiqa_errors=$(grep "summary =" ./test-automation/JmeterPHIQAResult/phiqa.log | tail -1 | grep -oP "Err:\s+\K\d+")
         echo "phiqa_errors=$phiqa_errors" >> $GITHUB_ENV
+
+    - name: Archive JMeter Reports into ZIP files
+      run: |
+        sudo apt-get install -y zip
+        cd ./test-automation
+        zip -r ./JmeterStageReport.zip ./JmeterStageReport/
+        zip -r ./JmeterPHIQAReport.zip ./JmeterPHIQAReport/
 
     - name: Determine Failure
       id: determine-failure
@@ -65,10 +74,10 @@ jobs:
         echo "PHI-QA errors: $phiqa_errors"
         if [[ "$staging_errors" -gt 0 ]]; then
           echo "failure_env=Staging" >> $GITHUB_ENV
-          echo "failure_report=./test-automation/JmeterStageResult/staging.log" >> $GITHUB_ENV
+          echo "failure_report=./test-automation/JmeterStageReport.zip" >> $GITHUB_ENV
         elif [[ "$phiqa_errors" -gt 0 ]]; then
           echo "failure_env=PHI-QA" >> $GITHUB_ENV
-          echo "failure_report=./test-automation/JmeterPHIQAResult/phiqa.log" >> $GITHUB_ENV
+          echo "failure_report=./test-automation/JmeterPHIQAReport.zip" >> $GITHUB_ENV
         else
           echo "failure_env=None" >> $GITHUB_ENV
         fi
