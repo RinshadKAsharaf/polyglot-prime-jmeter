@@ -1,0 +1,126 @@
+name: FHIR Bundle SmokeTest
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'corretto'
+        cache: maven
+
+    - name: Download and setup JMeter
+      run: |
+        curl -O https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.tgz
+        tar -xzf apache-jmeter-5.6.3.tgz
+        sudo mv apache-jmeter-5.6.3 ./test-automation/
+
+    - name: Decode the .p12 file
+      env:
+        P12_FILE_BASE64: ${{ secrets.TECHBD_PHI_QA_KEY_BASE64 }}
+      run: |
+        CERT_DIR="./test-automation/Certificates"
+        mkdir -p $CERT_DIR
+        echo "$P12_FILE_BASE64" | base64 -d > "$CERT_DIR/techbd-phi-QA-key.p12"
+
+    - name: Update SSL paths in JMeter configuration files
+      run: |
+          CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
+          CERT_PATH="./test-automation/Certificates/techbd-phi-QA-key.p12"
+
+          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
+
+    # Define array of environments and their corresponding test files
+    - name: Run FHIR Bundle SmokeTest for Environments
+      id: run-tests
+      run: |
+        # Array of environments and their paths
+        environments=("Staging" "PHI-QA")
+        environment_paths=(
+          "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx"
+          "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx"
+        )
+
+        # Initialize failure arrays
+        failure_report=""
+        attachments=()
+
+        # Loop through environments
+        for i in "${!environments[@]}"; do
+          env="${environments[$i]}"
+          path="${environment_paths[$i]}"
+          result_dir="./test-automation/Jmeter${env}Result"
+          report_dir="./test-automation/Jmeter${env}Report"
+          zip_file="./test-automation/Jmeter${env}Report.zip"
+
+          mkdir -p "$result_dir"
+          mkdir -p "$report_dir"
+
+          # Run the JMeter test
+          ./test-automation/apache-jmeter-5.6.3/bin/jmeter -n -t "$path" -l "$result_dir/bundletest.jtl" > "$result_dir/$env.log"
+          ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "$result_dir/bundletest.jtl" -o "$report_dir/"
+
+          # Check errors in log
+          errors=$(grep "summary =" "$result_dir/$env.log" | tail -1 | grep -oP "Err:\s+\K\d+")
+          echo "${env}_errors=$errors" >> $GITHUB_ENV
+
+          # If errors found, add to failure report and attachments
+          if [[ "$errors" -gt 0 ]]; then
+            failure_report+="- $env environment failed\n"
+            attachments+=("$zip_file")
+          fi
+        done
+
+        # Handle case where no failures
+        if [[ -z "$failure_report" ]]; then
+          failure_report="No failures detected."
+        fi
+
+        # Convert attachments array to comma-separated string
+        failure_attachments=$(IFS=,; echo "${attachments[*]}")
+        echo "failure_attachments=$failure_attachments" >> $GITHUB_ENV
+        echo "failure_report=$failure_report" >> $GITHUB_ENV
+
+    - name: Archive JMeter Reports into ZIP files
+      run: |
+        sudo apt-get install -y zip
+        cd ./test-automation
+        for env in "Staging" "PHI-QA"; do
+          zip -r "./Jmeter${env}Report.zip" "./Jmeter${env}Report/"
+        done
+
+  - name: Send Email Notification (Conditional)
+    if: env.failure_attachments != ''
+    uses: dawidd6/action-send-mail@v3
+    with:
+      server_address: email-smtp.us-east-1.amazonaws.com
+      server_port: 587
+      username: ${{ secrets.SES_SMTP_USERNAME }}
+      password: ${{ secrets.SES_SMTP_PASSWORD }}
+      subject: "FHIR Bundle SmokeTest Failures"
+      body: |
+        Hello Team,
+
+        The FHIR Bundle SmokeTest encountered failures.  
+        ${{ env.failure_report }}
+
+        Please find the attached reports for the failing environments.
+
+        Regards,  
+        Tech by Design Automation Team  
+
+      content_type: "text/plain"
+      from: "Tech by Design FHIR  SmokeTest Result <no-reply@tx.techbd.org>"
+      to: rinshad-asharaf@netspective.in
+      attachments: ${{ env.failure_attachments }}
