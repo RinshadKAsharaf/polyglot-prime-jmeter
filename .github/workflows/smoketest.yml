@@ -35,13 +35,23 @@ jobs:
 
     - name: Update SSL paths in JMeter configuration files
       run: |
-        CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
-        CERT_PATH="./test-automation/Certificates/techbd-phi-QA-key.p12"
+          CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
+          CERT_PATH="./test-automation/Certificates/techbd-phi-QA-key.p12"
 
-        echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
-        echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
-        echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
 
+          # Update system.properties
+          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/system.properties
+          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/system.properties
+          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/system.properties
+
+          # Update user.properties
+          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/user.properties
+          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
+          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
+          
     - name: Run FHIR Bundle SmokeTest - Staging
       id: run-staging
       run: |
