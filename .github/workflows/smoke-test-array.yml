@@ -1,4 +1,4 @@
-name: FHIR Bundle Smoke-Test
+name: FHIR Bundle SmokeTest (ARRAY)
 
 on:
   workflow_dispatch:
@@ -78,7 +78,7 @@ jobs:
 
           # If errors found, add environment and report to failure
           if [[ "$errors" -gt 0 ]]; then
-            failure_report+="- $env environment failed\n"
+            printf -v failure_report "%s- %s environment failed\n" "$failure_report" "$env"
             attachments+=("$zip_file")
           fi
         done
