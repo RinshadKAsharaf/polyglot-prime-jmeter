@@ -42,16 +42,6 @@ jobs:
           echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
           echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
 
-          # Update system.properties
-          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/system.properties
-          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/system.properties
-          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/system.properties
-
-          # Update user.properties
-          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/user.properties
-          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
-          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
-          
     - name: Run FHIR Bundle SmokeTest - Staging
       id: run-staging
       run: |
@@ -60,7 +50,6 @@ jobs:
         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterStageResult/bundletest.jtl" -o "./test-automation/JmeterStageReport/"
         staging_errors=$(grep "summary =" ./test-automation/JmeterStageResult/staging.log | tail -1 | grep -oP "Err:\s+\K\d+")
         echo "staging_errors=$staging_errors" >> $GITHUB_ENV
-        cat ./test-automation/JmeterStageResult/bundletest.jtl
 
     - name: Run FHIR Bundle SmokeTest - PHI-QA
       id: run-phiqa
@@ -70,7 +59,6 @@ jobs:
         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterPHIQAResult/bundletest.jtl" -o "./test-automation/JmeterPHIQAReport/"        
         phiqa_errors=$(grep "summary =" ./test-automation/JmeterPHIQAResult/phiqa.log | tail -1 | grep -oP "Err:\s+\K\d+")
         echo "phiqa_errors=$phiqa_errors" >> $GITHUB_ENV
-        cat ./test-automation/JmeterPHIQAResult/phiqa.log 
 
     - name: Archive JMeter Reports into ZIP files
       run: |
@@ -84,30 +72,38 @@ jobs:
       run: |
         echo "Staging errors: $staging_errors"
         echo "PHI-QA errors: $phiqa_errors"
+
+        attachments=""
         if [[ "$staging_errors" -gt 0 ]]; then
-          echo "failure_env=Staging" >> $GITHUB_ENV
-          echo "failure_report=./test-automation/JmeterStageReport.zip" >> $GITHUB_ENV
-        elif [[ "$phiqa_errors" -gt 0 ]]; then
-          echo "failure_env=PHI-QA" >> $GITHUB_ENV
-          echo "failure_report=./test-automation/JmeterPHIQAReport.zip" >> $GITHUB_ENV
-        else
-          echo "failure_env=None" >> $GITHUB_ENV
+          echo "Staging environment failed."
+          attachments="./test-automation/JmeterStageReport.zip"
         fi
 
+        if [[ "$phiqa_errors" -gt 0 ]]; then
+          echo "PHI-QA environment failed."
+          if [[ -n "$attachments" ]]; then
+            attachments="$attachments,./test-automation/JmeterPHIQAReport.zip"
+          else
+            attachments="./test-automation/JmeterPHIQAReport.zip"
+          fi
+        fi
+
+        echo "failure_attachments=$attachments" >> $GITHUB_ENV
+
     - name: Send Email Notification (Conditional)
-      if: env.failure_env != 'None'
+      if: env.failure_attachments != ''
       uses: dawidd6/action-send-mail@v3
       with:
         server_address: email-smtp.us-east-1.amazonaws.com
         server_port: 587
         username: ${{ secrets.SES_SMTP_USERNAME }}
         password: ${{ secrets.SES_SMTP_PASSWORD }}
-        subject: "FHIR Bundle SmokeTest Failed: ${{ env.failure_env }}"
+        subject: "FHIR Bundle SmokeTest Failures"
         body: |
           Hello Team,
 
-          The FHIR Bundle SmokeTest for the ${{ env.failure_env }} environment has failed.  
-          Please find the attached report for more details.
+          The FHIR Bundle SmokeTest encountered failures.  
+          Please find the attached reports for the failing environments.
 
           Regards,  
           Tech by Design Automation Team  
@@ -115,4 +111,4 @@ jobs:
         content_type: "text/plain"
         from: "Tech by Design FHIR SmokeTest Result <no-reply@tx.techbd.org>"
         to: nidhin-unni@netspective.in
-        attachments: ${{ env.failure_report }}
+        attachments: ${{ env.failure_attachments }}
