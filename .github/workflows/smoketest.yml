@@ -1,5 +1,8 @@
-name: FHIR Bundle 
-  workflow_dispatch:
+name: FHIR Bundle SmokeTest
+on:
+  push:
+  schedule:
+    - cron: '0 */1 * * *'
 
 jobs:
   test:
