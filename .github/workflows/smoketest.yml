@@ -59,6 +59,7 @@ jobs:
         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterPHIQAResult/bundletest.jtl" -o "./test-automation/JmeterPHIQAReport/"        
         phiqa_errors=$(grep "summary =" ./test-automation/JmeterPHIQAResult/phiqa.log | tail -1 | grep -oP "Err:\s+\K\d+")
         echo "phiqa_errors=$phiqa_errors" >> $GITHUB_ENV
+        cat ./test-automation/JmeterPHIQAResult/phiqa.log 
 
     - name: Archive JMeter Reports into ZIP files
       run: |
