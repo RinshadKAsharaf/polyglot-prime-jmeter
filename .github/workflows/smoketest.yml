@@ -60,6 +60,7 @@ jobs:
         ./test-automation/apache-jmeter-5.6.3/bin/jmeter -g "./test-automation/JmeterStageResult/bundletest.jtl" -o "./test-automation/JmeterStageReport/"
         staging_errors=$(grep "summary =" ./test-automation/JmeterStageResult/staging.log | tail -1 | grep -oP "Err:\s+\K\d+")
         echo "staging_errors=$staging_errors" >> $GITHUB_ENV
+        cat ./test-automation/JmeterStageResult/bundletest.jtl
 
     - name: Run FHIR Bundle SmokeTest - PHI-QA
       id: run-phiqa
