@@ -78,7 +78,7 @@ jobs:
 
           # If errors found, add environment and report to failure
           if [[ "$errors" -gt 0 ]]; then
-            printf -v failure_report "%s- %s environment failed\n" "$failure_report" "$env"
+            printf -v failure_report "%s environment failed\n" "$failure_report" "$env"
             attachments+=("$zip_file")
           fi
         done
