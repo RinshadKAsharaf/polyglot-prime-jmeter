@@ -37,10 +37,17 @@ jobs:
         CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
         CERT_PATH="./test-automation/Certificates/techbd-phi-QA-key.p12"
         
-        # Update JMeter SSL configuration
-        echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
-        echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
-        echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
+          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
+
+          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/system.properties
+          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/system.properties
+          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/system.properties
+
+          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/user.properties
+          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
+          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
 
     - name: Run FHIR Bundle SmokeTest for Environments
       id: run-tests
