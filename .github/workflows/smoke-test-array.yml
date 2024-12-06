@@ -135,5 +135,5 @@ jobs:
 
         content_type: "text/plain"
         from: "Tech by Design FHIR SmokeTest Result <no-reply@tx.techbd.org>"
-        to: rinshad-asharaf@netspective.in
+        to: rinshad-asharaf@netspective.in, nidhin-unni@netspective.in
         attachments: ${{ env.failure_attachments }}
