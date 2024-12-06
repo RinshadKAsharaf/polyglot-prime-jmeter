@@ -53,7 +53,7 @@ jobs:
       id: run-tests
       run: |
         # Array of environments and their paths
-        environments=("Staging" "PHI-QA")
+        environments=("Staging" "PHIQA")
         environment_paths=(
           "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx"
           "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx"
