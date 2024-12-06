@@ -75,7 +75,10 @@ jobs:
           # Check for errors in the JMeter log file
           errors=$(grep "summary =" "$result_dir/$env.log" | tail -1 | grep -oP "Err:\s+\K\d+")
           echo "${env}_errors=$errors" >> $GITHUB_ENV
-
+          
+          # Show the log in console
+          cat $result_dir/$env.log
+          
           # If errors found, add environment and report to failure
           if [[ "$errors" -gt 0 ]]; then
             printf -v failure_report "%s%s environment failed\n" "$failure_report" "$env"
