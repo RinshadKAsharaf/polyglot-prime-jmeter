@@ -60,6 +60,7 @@ jobs:
         )
 
         # Initialize failure report and attachments arrays
+        counter=1
         failure_report=""
         attachments=()
 
@@ -88,7 +89,8 @@ jobs:
           
           # If errors found, add environment and report to failure
           if [[ "$errors" -gt 0 ]]; then
-            failure_report="${failure_report}  * ${env} environment failed\n"
+            failure_report="${failure_report}${counter}. ${env}, "
+            counter=$((counter + 1))
             attachments+=("$zip_file")
           fi
         done
@@ -96,14 +98,12 @@ jobs:
         # If no failures, set a default message
         if [[ -z "$failure_report" ]]; then
           failure_report="No failures detected."
+        else
+          # Remove trailing comma and space
+          failure_report=$(echo "$failure_report" | sed 's/, $//')
         fi
 
-        # Sanitize failure_report for GitHub Actions
-        failure_report=$(echo -e "$failure_report")
-
-        # Convert attachments array to a comma-separated string for GitHub Actions
-        failure_attachments=$(IFS=,; echo "${attachments[*]}")
-        echo "failure_attachments=$failure_attachments" >> $GITHUB_ENV
+        # Export the failure_report to GitHub Actions environment
         echo "failure_report=$failure_report" >> $GITHUB_ENV
 
     - name: Archive JMeter Reports into ZIP files
@@ -128,7 +128,7 @@ jobs:
         body: |
           Hello Team,
 
-          The FHIR Bundle SmokeTest encountered failures for the below environment:
+          The FHIR Bundle SmokeTest encountered failures in the following environments:
 
           ${{ env.failure_report }}
 
