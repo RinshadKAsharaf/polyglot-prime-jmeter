@@ -88,23 +88,23 @@ jobs:
           
           # If errors found, add environment and report to failure
           if [[ "$errors" -gt 0 ]]; then
-            failure_report="${failure_report}${env} environment failed\n"
+            failure_report="${failure_report}* ${env} environment failed\n"
             attachments+=("$zip_file")
           fi
         done
+        
+          # If no failures, set a default message
+          if [[ -z "$failure_report" ]]; then
+            failure_report="No failures detected."
+          fi
 
-        # If no failures, set a default message
-        if [[ -z "$failure_report" ]]; then
-          failure_report="No failures detected."
-        fi
+          # Sanitize failure_report for GitHub environment variable
+          failure_report=$(echo -e "$failure_report" | sed ':a;N;$!ba;s/\n/\\n/g')
 
-        # Sanitize failure_report for GitHub environment variable
-        failure_report=$(echo "$failure_report" | sed ':a;N;$!ba;s/\n/\\n/g')
-    
-        # Convert attachments array to a comma-separated string for GitHub Actions
-        failure_attachments=$(IFS=,; echo "${attachments[*]}")
-        echo "failure_attachments=$failure_attachments" >> $GITHUB_ENV
-        echo "failure_report=$failure_report" >> $GITHUB_ENV
+          # Convert attachments array to a comma-separated string for GitHub Actions
+          failure_attachments=$(IFS=,; echo "${attachments[*]}")
+          echo "failure_attachments=$failure_attachments" >> $GITHUB_ENV
+          echo "failure_report=$failure_report" >> $GITHUB_ENV
 
     - name: Archive JMeter Reports into ZIP files
       run: |
