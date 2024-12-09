@@ -98,13 +98,13 @@ jobs:
             failure_report="No failures detected."
           fi
 
-          # Export failure_report as output for the job
-          echo "::set-output name=failure_report::$(echo -e "$failure_report")"
+          # Write the failure_report to a temporary file
+          echo -e "$failure_report" > failure_report.txt
 
           # Convert attachments array to a comma-separated string for GitHub Actions
           failure_attachments=$(IFS=,; echo "${attachments[*]}")
           echo "failure_attachments=$failure_attachments" >> $GITHUB_ENV
-          echo "failure_report=$failure_report" >> $GITHUB_ENV
+
 
     - name: Archive JMeter Reports into ZIP files
       run: |
@@ -130,8 +130,7 @@ jobs:
 
           The FHIR Bundle SmokeTest encountered failures for the below environment.
           
-           ${{ steps.run-tests.outputs.failure_report }}
-
+           $(cat failure_report.txt)
           Attached reports for the same.
 
           Regards,  
