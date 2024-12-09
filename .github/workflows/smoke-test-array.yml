@@ -53,7 +53,7 @@ jobs:
       id: run-tests
       run: |
         # Array of environments and their paths
-        environments=("Staging" "PHIQA")
+        environments=("Staging" "PHI-QA")
         environment_paths=(
           "./test-automation/FHIR-Bundle-SmokeTest-Stage/Bundle.jmx"
           "./test-automation/FHIR-Bundle-SmokeTest-PHI-QA/Bundle.jmx"
@@ -138,5 +138,5 @@ jobs:
 
         content_type: "text/plain"
         from: "Tech by Design FHIR SmokeTest Result <no-reply@tx.techbd.org>"
-        to: rinshad-asharaf@netspective.in, nidhin-unni@netspective.in
+        to: rinshad-asharaf@netspective.in
         attachments: ${{ env.failure_attachments }}
