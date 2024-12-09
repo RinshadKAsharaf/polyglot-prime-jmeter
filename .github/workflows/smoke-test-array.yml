@@ -128,10 +128,11 @@ jobs:
         body: |
           Hello Team,
 
-          The FHIR Bundle SmokeTest encountered failures.  
-          ${{ env.failure_report }}
+          The FHIR Bundle SmokeTest encountered failures for the below environment.
+          
+           ${{ steps.run-tests.outputs.failure_report }}
 
-          Please find the attached reports for the failing environments.
+          Attached reports for the same.
 
           Regards,  
           Tech by Design Automation Team  
