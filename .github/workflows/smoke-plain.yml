@@ -99,7 +99,7 @@ jobs:
         fi
 
         # Sanitize failure_report for GitHub Actions
-        failure_report=$(echo -e "$failure_report" | sed ':a;N;$!ba;s/\n/\\n/g')
+        failure_report=$(echo -e "$failure_report")
 
         # Convert attachments array to a comma-separated string for GitHub Actions
         failure_attachments=$(IFS=,; echo "${attachments[*]}")
