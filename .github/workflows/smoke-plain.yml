@@ -102,7 +102,9 @@ jobs:
           # Remove trailing comma and space
           failure_report=$(echo "$failure_report" | sed 's/, $//')
         fi
-
+        
+        # Convert attachments array to a comma-separated string for GitHub Actions
+        failure_attachments=$(IFS=,; echo "${attachments[*]}")
         # Export the failure_report to GitHub Actions environment
         echo "failure_report=$failure_report" >> $GITHUB_ENV
 
