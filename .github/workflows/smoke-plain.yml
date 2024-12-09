@@ -1,4 +1,4 @@
-name: FHIR Bundle SmokeTest (ARRAY)
+name: FHIR Bundle SmokeTest (PLAIN)
 
 on:
   workflow_dispatch:
