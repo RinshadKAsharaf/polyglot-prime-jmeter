@@ -37,17 +37,17 @@ jobs:
         CONFIG_DIR="./test-automation/apache-jmeter-5.6.3/bin"
         CERT_PATH="./test-automation/Certificates/techbd-phi-QA-key.p12"
         
-          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
-          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
-          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
+        echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/jmeter.properties
+        echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/jmeter.properties
+        echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/jmeter.properties
 
-          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/system.properties
-          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/system.properties
-          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/system.properties
+        echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/system.properties
+        echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/system.properties
+        echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/system.properties
 
-          echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/user.properties
-          echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
-          echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
+        echo "javax.net.ssl.keyStore=$CERT_PATH" >> $CONFIG_DIR/user.properties
+        echo "javax.net.ssl.keyStorePassword=" >> $CONFIG_DIR/user.properties
+        echo "javax.net.ssl.keyStoreType=pkcs12" >> $CONFIG_DIR/user.properties
 
     - name: Run FHIR Bundle SmokeTest for Environments
       id: run-tests
@@ -88,25 +88,25 @@ jobs:
           
           # If errors found, add environment and report to failure
           if [[ "$errors" -gt 0 ]]; then
-            failure_report="${failure_report}* ${env} environment failed\n"
+            failure_report="${failure_report}<li>${env} environment failed</li>"
             attachments+=("$zip_file")
           fi
         done
-        
-          # If no failures, set a default message
-          if [[ -z "$failure_report" ]]; then
-            failure_report="No failures detected."
-          fi
 
-          # Write the failure_report to a temporary file
-          echo -e "$failure_report" > failure_report.txt
+        # If no failures, set a default message
+        if [[ -z "$failure_report" ]]; then
+          failure_report="<p>No failures detected.</p>"
+        else
+          failure_report="<ul>${failure_report}</ul>"
+        fi
 
-          # Convert attachments array to a comma-separated string for GitHub Actions
-          failure_attachments=$(IFS=,; echo "${attachments[*]}")
-          echo "failure_attachments=$failure_attachments" >> $GITHUB_ENV
-          failure_report=$(cat failure_report.txt)
-          echo "failure_report=${failure_report}" >> $GITHUB_ENV
-
+        # Sanitize failure_report for GitHub environment variable
+        failure_report=$(echo "$failure_report" | sed ':a;N;$!ba;s/\n/ /g')
+    
+        # Convert attachments array to a comma-separated string for GitHub Actions
+        failure_attachments=$(IFS=,; echo "${attachments[*]}")
+        echo "failure_attachments=$failure_attachments" >> $GITHUB_ENV
+        echo "failure_report=$failure_report" >> $GITHUB_ENV
 
     - name: Archive JMeter Reports into ZIP files
       run: |
@@ -128,17 +128,20 @@ jobs:
         password: ${{ secrets.SES_SMTP_PASSWORD }}
         subject: "FHIR Bundle SmokeTest Failures"
         body: |
-          Hello Team,
+          <html>
+          <body>
+            <p>Hello Team,</p>
 
-          The FHIR Bundle SmokeTest encountered failures for the below environment.
-          
-           ${{ env.failure_report }}
-          Attached reports for the same.
+            <p>The FHIR Bundle SmokeTest encountered failures for the below environment:</p>
+            ${{ env.failure_report }}
 
-          Regards,  
-          Tech by Design Automation Team  
+            <p>Please find the attached reports for the same.</p>
 
-        content_type: "text/plain"
+            <p>Regards,<br>
+            Tech by Design Automation Team</p>
+          </body>
+          </html>
+        content_type: "text/html"
         from: "Tech by Design FHIR SmokeTest Result <no-reply@tx.techbd.org>"
         to: rinshad-asharaf@netspective.in
         attachments: ${{ env.failure_attachments }}
