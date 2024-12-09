@@ -98,8 +98,8 @@ jobs:
             failure_report="No failures detected."
           fi
 
-          # Sanitize failure_report for GitHub environment variable
-          failure_report=$(echo -e "$failure_report" | sed ':a;N;$!ba;s/\n/\\n/g')
+          # Export failure_report as output for the job
+          echo "::set-output name=failure_report::$(echo -e "$failure_report")"
 
           # Convert attachments array to a comma-separated string for GitHub Actions
           failure_attachments=$(IFS=,; echo "${attachments[*]}")
