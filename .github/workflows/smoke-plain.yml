@@ -105,6 +105,8 @@ jobs:
         
         # Convert attachments array to a comma-separated string for GitHub Actions
         failure_attachments=$(IFS=,; echo "${attachments[*]}")
+        echo "failure_attachments=$failure_attachments" >> $GITHUB_ENV
+        
         # Export the failure_report to GitHub Actions environment
         echo "failure_report=$failure_report" >> $GITHUB_ENV
 
