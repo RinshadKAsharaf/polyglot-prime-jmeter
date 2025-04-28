@@ -23,28 +23,32 @@ jobs:
     - name: Install jq
       run: sudo apt-get install jq
  
-    - name: Fetch PROD version
+    - name: Fetch and parse PROD version
       id: fetch_prod
       run: |
         echo "Fetching PROD version..."
-        curl -s "$PROD_URL" -o prod_response.json
-        VERSION=$(jq -r '.version' prod_response.json)
+        curl -s "$PROD_URL" -o prod_response.html
+        cat prod_response.html # optional: for debugging
+        VERSION=$(grep -oP 'version\s*=\s*"\K[^"]+' prod_response.html || echo "unknown")
+        echo "Fetched PROD version: $VERSION"
         echo "PROD_VERSION=$VERSION" >> $GITHUB_ENV
- 
-    - name: Fetch QA version
+
+    - name: Fetch and parse QA version
       id: fetch_qa
       run: |
         echo "Fetching QA version..."
-        curl -s "$QA_URL" -o qa_response.json
-        VERSION=$(jq -r '.version' qa_response.json)
+        curl -s "$QA_URL" -o qa_response.html
+        cat qa_response.html # optional: for debugging
+        VERSION=$(grep -oP 'version\s*=\s*"\K[^"]+' qa_response.html || echo "unknown")
+        echo "Fetched QA version: $VERSION"
         echo "QA_VERSION=$VERSION" >> $GITHUB_ENV
- 
+
     - name: Compare versions and take actions
       run: |
         set -e
- 
+
         UPDATED=false
- 
+
         echo "Checking PROD version..."
         STORED_PROD_VERSION=$(cat $PROD_VERSION_FILE)
         if [[ "$PROD_VERSION" != "$STORED_PROD_VERSION" ]]; then
@@ -53,7 +57,7 @@ jobs:
           echo "NEW_VERSION=$PROD_VERSION" >> $GITHUB_ENV
           UPDATED=true
         fi
- 
+
         echo "Checking QA version..."
         STORED_QA_VERSION=$(cat $QA_VERSION_FILE)
         if [[ "$QA_VERSION" != "$STORED_QA_VERSION" ]]; then
@@ -62,7 +66,7 @@ jobs:
           echo "NEW_VERSION=$QA_VERSION" >> $GITHUB_ENV
           UPDATED=true
         fi
- 
+
         if [[ "$UPDATED" != true ]]; then
           echo "No version updates detected."
           exit 0
