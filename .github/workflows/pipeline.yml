@@ -1,0 +1,127 @@
+name: Daily Version Check and Notification
+ 
+on:
+  schedule:
+    - cron: '0 0 * * *' # Daily at midnight UTC
+  workflow_dispatch:
+ 
+jobs:
+  check_versions:
+    runs-on: ubuntu-latest
+ 
+    env:
+      PROD_URL: "https://shinny.org/us/ny/hrsn/index.html"
+      QA_URL: "https://test.shinny.org"
+      PROD_VERSION_FILE: "versions/prod_version.txt"
+      QA_VERSION_FILE: "versions/qa_version.txt"
+      HELP_EMAIL: "nidhin-unni@netspective.in"
+ 
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v2
+ 
+    - name: Install jq
+      run: sudo apt-get install jq
+ 
+    - name: Fetch PROD version
+      id: fetch_prod
+      run: |
+        echo "Fetching PROD version..."
+        curl -s "$PROD_URL" -o prod_response.json
+        VERSION=$(jq -r '.version' prod_response.json)
+        echo "PROD_VERSION=$VERSION" >> $GITHUB_ENV
+ 
+    - name: Fetch QA version
+      id: fetch_qa
+      run: |
+        echo "Fetching QA version..."
+        curl -s "$QA_URL" -o qa_response.json
+        VERSION=$(jq -r '.version' qa_response.json)
+        echo "QA_VERSION=$VERSION" >> $GITHUB_ENV
+ 
+    - name: Compare versions and take actions
+      run: |
+        set -e
+ 
+        UPDATED=false
+ 
+        echo "Checking PROD version..."
+        STORED_PROD_VERSION=$(cat $PROD_VERSION_FILE)
+        if [[ "$PROD_VERSION" != "$STORED_PROD_VERSION" ]]; then
+          echo "PROD version updated: $STORED_PROD_VERSION -> $PROD_VERSION"
+          echo "ENVIRONMENT=PROD" >> $GITHUB_ENV
+          echo "NEW_VERSION=$PROD_VERSION" >> $GITHUB_ENV
+          UPDATED=true
+        fi
+ 
+        echo "Checking QA version..."
+        STORED_QA_VERSION=$(cat $QA_VERSION_FILE)
+        if [[ "$QA_VERSION" != "$STORED_QA_VERSION" ]]; then
+          echo "QA version updated: $STORED_QA_VERSION -> $QA_VERSION"
+          echo "ENVIRONMENT=QA" >> $GITHUB_ENV
+          echo "NEW_VERSION=$QA_VERSION" >> $GITHUB_ENV
+          UPDATED=true
+        fi
+ 
+        if [[ "$UPDATED" != true ]]; then
+          echo "No version updates detected."
+          exit 0
+        fi
+ 
+    - name: Create GitHub Issue
+      id: create_issue
+      if: env.NEW_VERSION
+      run: |
+        ISSUE_TITLE="${ENVIRONMENT} - NYeC Published IG Updated to ${NEW_VERSION}"
+        ISSUE_BODY="A new version (${NEW_VERSION}) has been published for ${ENVIRONMENT}. \n\n Please review and create a release following internal processes."
+        API_JSON=$(jq -n --arg title "$ISSUE_TITLE" --arg body "$ISSUE_BODY" '{title: $title, body: $body}')
+        RESPONSE=$(curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -d "$API_JSON" "https://api.github.com/repos/${{ github.repository }}/issues")
+        ISSUE_URL=$(echo "$RESPONSE" | jq -r '.html_url')
+        echo "ISSUE_URL=$ISSUE_URL" >> $GITHUB_ENV
+ 
+    - name: Send email about version update
+      if: env.ISSUE_URL
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: email-smtp.us-east-1.amazonaws.com
+        server_port: 587
+        username: ${{ secrets.SES_SMTP_USERNAME }}
+        password: ${{ secrets.SES_SMTP_PASSWORD }}
+        subject: "${{ env.ENVIRONMENT }} - NYeC Published IG"
+        to: ${{ env.HELP_EMAIL }}
+        from: "Tech by Design Notification <no-reply@tx.techbd.org>"
+        body: |
+          A new version has been detected and an issue has been created:
+          Issue Link: ${{ env.ISSUE_URL }}
+          Version: ${{ env.NEW_VERSION }}
+          Environment: ${{ env.ENVIRONMENT }}
+ 
+    - name: Update stored version number
+      if: env.NEW_VERSION
+      run: |
+        if [[ "$ENVIRONMENT" == "PROD" ]]; then
+          echo "$NEW_VERSION" > $PROD_VERSION_FILE
+        else
+          echo "$NEW_VERSION" > $QA_VERSION_FILE
+        fi
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git add $PROD_VERSION_FILE $QA_VERSION_FILE
+        git commit -m "Update ${ENVIRONMENT} version to ${NEW_VERSION}"
+        git push
+ 
+    - name: Handle errors
+      if: failure()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: email-smtp.us-east-1.amazonaws.com
+        server_port: 587
+        username: ${{ secrets.SES_SMTP_USERNAME }}
+        password: ${{ secrets.SES_SMTP_PASSWORD }}
+        subject: "[Alert] Failure in NYeC Published IG Check Workflow"
+        to: ${{ env.HELP_EMAIL }}
+        from: "Tech by Design Alert <no-reply@tx.techbd.org>"
+        body: |
+          The daily version check workflow has failed. 
+          Please review the GitHub Actions logs for details.
+ 
